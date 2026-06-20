@@ -17,7 +17,9 @@ set -euo pipefail
 
 # --- Configuration (override via environment) ---------------------------------
 export AWS_PROFILE="${AWS_PROFILE:-sauhsoj+ct-primary-Admin}"
-export AWS_REGION="${AWS_REGION:-ap-southeast-2}"   # overrides any inherited AWS_REGION
+# Region is pinned to match lib/app.ts. Forced (not defaulted) so an inherited
+# AWS_REGION in the caller's shell cannot send CLI calls to the wrong region.
+export AWS_REGION=ap-southeast-2
 export CDK_DOCKER="${CDK_DOCKER:-finch}"            # container runtime for Lambda bundling
 
 # Resolve repo root (this script lives in <repo>/scripts).
@@ -67,7 +69,7 @@ aws cloudformation describe-stacks \
   --profile "$AWS_PROFILE" \
   --query "Stacks[0].Outputs" --output table || true
 
-cat <<'EOF'
+cat <<EOF
 
 ==> Deploy complete. Remaining manual steps:
 
