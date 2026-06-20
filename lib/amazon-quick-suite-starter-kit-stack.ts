@@ -11,13 +11,14 @@ import { Construct } from 'constructs';
 
 const RESOURCE_PREFIX = 'QuickSuiteStarterKit';
 
-export class AmazonQuickSuiteStarterKitStack extends Stack {
+export class AmazonQuickSuiteStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
     const identityCenterArn = this.node.tryGetContext(
       'IDENTITY_CENTER_INSTANCE_ARN',
     );
+    const identityStoreIdContext = this.node.tryGetContext('IDENTITY_STORE_ID');
     const accountName =
       this.node.tryGetContext('QUICK_SUITE_ACCOUNT_NAME') ||
       'QuickSuiteStarterKit';
@@ -31,7 +32,13 @@ export class AmazonQuickSuiteStarterKitStack extends Stack {
     let instanceArn: string;
 
     if (identityCenterArn) {
-      identityStoreId = identityCenterArn;
+      if (!identityStoreIdContext) {
+        throw new Error(
+          'IDENTITY_STORE_ID context is required when IDENTITY_CENTER_INSTANCE_ARN is provided. ' +
+            'Look it up with: aws sso-admin list-instances',
+        );
+      }
+      identityStoreId = identityStoreIdContext;
       instanceArn = identityCenterArn;
     } else {
       const identityCenterInstance = new CfnInstance(

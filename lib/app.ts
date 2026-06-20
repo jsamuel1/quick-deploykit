@@ -1,17 +1,44 @@
 #!/usr/bin/env node
 import { App } from 'aws-cdk-lib/core';
-import { AmazonQuickSuiteStarterKitStack } from './amazon-quick-suite-starter-kit-stack';
+import { AmazonQuickSuiteStack } from './amazon-quick-suite-starter-kit-stack';
+import { CognitoProxyStack } from './quick-desktop/stacks/cognito-proxy-stack';
+import {
+  ProjectName,
+  QuickDesktopConfig,
+  createStackName,
+} from './quick-desktop/common/config';
+
+/* Region is pinned so the deploy target does not depend on the shell's
+ * AWS_REGION/CDK_DEFAULT_REGION (which may differ). Account is still taken
+ * from the current CLI profile (sauhsoj+ct-primary-Admin -> 747436374768). */
+const REGION = 'ap-southeast-2';
+const env = {
+  account: process.env.CDK_DEFAULT_ACCOUNT,
+  region: REGION,
+};
 
 const app = new App();
-new AmazonQuickSuiteStarterKitStack(app, 'AmazonQuickSuiteStarterKitStack', {
-  /* If you don't specify 'env', this stack will be environment-agnostic.
-   * Account/Region-dependent features and context lookups will not work,
-   * but a single synthesized template can be deployed anywhere. */
-  /* Uncomment the next line to specialize this stack for the AWS Account
-   * and Region that are implied by the current CLI configuration. */
-  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-  /* Uncomment the next line if you know exactly what Account and Region you
-   * want to deploy the stack to. */
-  // env: { account: '123456789012', region: 'us-east-1' },
-  /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
-});
+
+// Stack 1: Amazon Quick Suite subscription + IAM Identity Center wiring.
+new AmazonQuickSuiteStack(app, 'AmazonQuickSuiteStack', { env });
+
+// Stack 2: Cognito OIDC provider + proxy for Amazon Quick on desktop.
+// MFA is required for all users; the API Gateway is left open (no CIDR
+// allowlist). Override allowedCidrs/retain via -c context if needed.
+const allowedCidrs = app.node.tryGetContext('allowedCidrs') as
+  | string[]
+  | undefined;
+const retainResources = app.node.tryGetContext('retain') === 'true';
+
+const desktopConfig: QuickDesktopConfig = {
+  projectName: ProjectName.QUICK_DESKTOP,
+  retainResources,
+  mfaRequired: true,
+  ...(allowedCidrs && { allowedCidrs }),
+};
+
+new CognitoProxyStack(
+  app,
+  createStackName(desktopConfig.projectName, 'CognitoProxy'),
+  { config: desktopConfig, env },
+);

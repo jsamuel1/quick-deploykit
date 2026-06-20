@@ -16,6 +16,10 @@
     ]
   },
   "context": {
+    "IDENTITY_CENTER_INSTANCE_ARN": "arn:aws:sso:::instance/ssoins-8259aed1fab1c333",
+    "IDENTITY_STORE_ID": "d-9767496d29",
+    "QUICK_SUITE_ACCOUNT_NAME": "sauhsoj-ct",
+    "QUICK_SUITE_ADMIN_EMAIL": "sauhsoj@amazon.com",
     "@aws-cdk/core:addConstructMetadataFailed": true,
     "@aws-cdk/aws-signer:signingProfileNamePassedToCfn": true,
     "@aws-cdk/aws-ecs-patterns:secGroupsDisablesImplicitOpenListener": true,
